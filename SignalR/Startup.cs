@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SignalR.Context;
+using SignalR.Hubs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +27,16 @@ namespace SignalR
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
+            services.AddSignalR();
+
+            services.AddSession(options => {
+                options.IdleTimeout = TimeSpan.FromMinutes(120);
+            });
+
+            services.AddMemoryCache();
+
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DatabaseConnection")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,9 +60,12 @@ namespace SignalR
 
             app.UseAuthorization();
 
+            app.UseSession();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
+                endpoints.MapHub<ChatHub>("/chathub");
             });
         }
     }
